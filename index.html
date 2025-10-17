@@ -53,6 +53,51 @@
             margin-bottom: 30px;
         }
 
+        .webhook-setup {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .webhook-setup h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .webhook-setup input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .webhook-setup button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        .webhook-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .webhook-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .webhook-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
         .input-group {
             display: flex;
             gap: 10px;
@@ -92,6 +137,12 @@
 
         button:active {
             transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .result {
@@ -373,7 +424,11 @@
             to { transform: rotate(360deg); }
         }
 
-
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
 
         @media (max-width: 768px) {
             .header h1 {
@@ -397,14 +452,22 @@
         <div class="header">
             <h1>🔗 URL Shortener</h1>
             <p>Maak verkorte links en track bezoekers</p>
-            <p class="info-text">💡 Herlaad de pagina om nieuwe bezoeken te zien</p>
+            <p class="info-text">💡 Data wordt real-time gesynchroniseerd via Discord</p>
         </div>
 
         <div class="card">
+            <div class="webhook-setup" id="webhookSetup">
+                <h3>⚙️ Discord Webhook Setup</h3>
+                <p>Plak je Discord webhook URL hieronder om tracking te activeren:</p>
+                <input type="text" id="webhookInput" placeholder="https://discord.com/api/webhooks/...">
+                <button onclick="saveWebhook()">Opslaan</button>
+                <div id="webhookStatus"></div>
+            </div>
+
             <h2>Nieuwe Link Maken</h2>
             <div class="input-group">
                 <input type="text" id="urlInput" placeholder="Plak hier je lange URL...">
-                <button onclick="createShortUrl()">Verkorten</button>
+                <button onclick="createShortUrl()" id="createBtn">Verkorten</button>
             </div>
             
             <div id="result" class="result">
@@ -416,6 +479,7 @@
 
         <div class="card">
             <h2>Mijn Links Dashboard</h2>
+            <button onclick="loadDashboard()" style="margin-bottom: 20px;">🔄 Dashboard Verversen</button>
             <div id="linksList"></div>
             
             <div class="danger-zone">
@@ -429,7 +493,7 @@
     <div class="modal" id="deleteModal">
         <div class="modal-content">
             <h2>⚠️ Weet je het zeker?</h2>
-            <p>Je staat op het punt om <strong>ALLE links en bezoekgegevens permanent te verwijderen</strong>. Deze actie kan niet ongedaan gemaakt worden.</p>
+            <p>Je staat op het punt om <strong>ALLE links en bezoekgegevens permanent te verwijderen</strong>. Dit verwijdert ook alle berichten in je Discord channel!</p>
             <p>Wil je echt doorgaan?</p>
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="hideDeleteModal()">Annuleren</button>
@@ -439,16 +503,143 @@
     </div>
 
     <script>
-        // Gebruik localStorage voor persistente opslag
         const STORAGE_KEY = 'urlShortenerData';
+        const WEBHOOK_KEY = 'discordWebhookUrl';
 
-        function getLinksData() {
-            const data = localStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : {};
+        // Haal webhook URL op
+        function getWebhookUrl() {
+            return localStorage.getItem(WEBHOOK_KEY);
         }
 
-        function saveLinksData(data) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        // Sla webhook URL op
+        function saveWebhook() {
+            const input = document.getElementById('webhookInput');
+            const url = input.value.trim();
+            
+            if (!url) {
+                showWebhookStatus('Voer een webhook URL in!', 'error');
+                return;
+            }
+
+            if (!url.includes('discord.com/api/webhooks/')) {
+                showWebhookStatus('Ongeldige Discord webhook URL!', 'error');
+                return;
+            }
+
+            localStorage.setItem(WEBHOOK_KEY, url);
+            showWebhookStatus('✅ Webhook opgeslagen! Tracking is nu actief.', 'success');
+            
+            // Verberg setup na opslaan
+            setTimeout(() => {
+                document.getElementById('webhookSetup').style.display = 'none';
+            }, 2000);
+        }
+
+        function showWebhookStatus(message, type) {
+            const status = document.getElementById('webhookStatus');
+            status.textContent = message;
+            status.className = `webhook-status ${type}`;
+            status.style.display = 'block';
+        }
+
+        // Check of webhook is ingesteld
+        function checkWebhook() {
+            const webhook = getWebhookUrl();
+            if (webhook) {
+                document.getElementById('webhookSetup').style.display = 'none';
+            } else {
+                document.getElementById('createBtn').disabled = true;
+            }
+        }
+
+        // Stuur data naar Discord
+        async function sendToDiscord(type, data) {
+            const webhook = getWebhookUrl();
+            if (!webhook) return false;
+
+            let embed;
+
+            if (type === 'new_link') {
+                embed = {
+                    title: '🔗 Nieuwe Link Aangemaakt',
+                    color: 0x667eea,
+                    fields: [
+                        {
+                            name: 'Short ID',
+                            value: `\`${data.shortId}\``,
+                            inline: false
+                        },
+                        {
+                            name: 'Originele URL',
+                            value: data.originalUrl,
+                            inline: false
+                        },
+                        {
+                            name: 'Korte Link',
+                            value: data.shortUrl,
+                            inline: false
+                        }
+                    ],
+                    timestamp: new Date().toISOString()
+                };
+            } else if (type === 'visit') {
+                embed = {
+                    title: '👀 Nieuwe Bezoeker',
+                    color: 0x43b581,
+                    fields: [
+                        {
+                            name: 'Link ID',
+                            value: `\`${data.shortId}\``,
+                            inline: true
+                        },
+                        {
+                            name: 'IP Adres',
+                            value: data.ip,
+                            inline: true
+                        },
+                        {
+                            name: 'Browser',
+                            value: data.browser,
+                            inline: true
+                        },
+                        {
+                            name: 'OS',
+                            value: data.os,
+                            inline: true
+                        },
+                        {
+                            name: 'Scherm',
+                            value: data.screen,
+                            inline: true
+                        },
+                        {
+                            name: 'Referrer',
+                            value: data.referrer,
+                            inline: true
+                        }
+                    ],
+                    timestamp: new Date().toISOString(),
+                    footer: {
+                        text: `Originele URL: ${data.originalUrl}`
+                    }
+                };
+            }
+
+            try {
+                await fetch(webhook, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        embeds: [embed]
+                    })
+                });
+                return true;
+            } catch (e) {
+                console.error('Discord webhook error:', e);
+                return false;
+            }
         }
 
         // Haal IP en browser info op
@@ -462,7 +653,6 @@
                 referrer: document.referrer || 'Direct'
             };
 
-            // Probeer IP te krijgen
             try {
                 const response = await fetch('https://api.ipify.org?format=json');
                 const data = await response.json();
@@ -474,7 +664,6 @@
             return info;
         }
 
-        // Parse browser info
         function parseBrowser(userAgent) {
             if (userAgent.includes('Firefox')) return 'Firefox';
             if (userAgent.includes('Chrome') && !userAgent.includes('Edge')) return 'Chrome';
@@ -492,24 +681,32 @@
             return 'Anders';
         }
 
-        // Check of we een redirect moeten doen via URL parameter
+        // Check redirect
         async function checkRedirect() {
             const urlParams = new URLSearchParams(window.location.search);
             const r = urlParams.get('r');
             
             if (r) {
-                // Toon redirect scherm
                 document.getElementById('redirectScreen').classList.add('active');
                 document.getElementById('mainContent').style.display = 'none';
                 
                 try {
                     const decoded = atob(r);
-                    
-                    // Log de visit
                     const visitorInfo = await getVisitorInfo();
                     
-                    const linksData = getLinksData();
+                    // Stuur naar Discord
+                    await sendToDiscord('visit', {
+                        shortId: r.substring(0, 8),
+                        originalUrl: decoded,
+                        ip: visitorInfo.ip,
+                        browser: parseBrowser(visitorInfo.userAgent),
+                        os: parseOS(visitorInfo.userAgent),
+                        screen: visitorInfo.screenResolution,
+                        referrer: visitorInfo.referrer
+                    });
                     
+                    // Lokaal ook opslaan
+                    const linksData = getLinksData();
                     if (!linksData[r]) {
                         linksData[r] = {
                             originalUrl: decoded,
@@ -517,14 +714,12 @@
                             visits: []
                         };
                     }
-                    
                     linksData[r].visits.push(visitorInfo);
                     saveLinksData(linksData);
                     
-                    // Redirect na 2 seconden
                     setTimeout(() => {
                         window.location.href = decoded;
-                    }, 2000);
+                    }, 1500);
                 } catch (e) {
                     alert('Ongeldige link');
                     window.location.href = window.location.origin;
@@ -532,7 +727,16 @@
             }
         }
 
-        function createShortUrl() {
+        function getLinksData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : {};
+        }
+
+        function saveLinksData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        async function createShortUrl() {
             const input = document.getElementById('urlInput');
             const url = input.value.trim();
             
@@ -541,7 +745,6 @@
                 return;
             }
 
-            // Valideer URL
             try {
                 new URL(url);
             } catch (e) {
@@ -549,13 +752,17 @@
                 return;
             }
 
-            // Encode URL naar base64
             const encoded = btoa(url);
             const shortUrl = `${window.location.origin}${window.location.pathname}?r=${encoded}`;
             
-            // Bewaar de link data
+            // Stuur naar Discord
+            await sendToDiscord('new_link', {
+                shortId: encoded.substring(0, 8),
+                originalUrl: url,
+                shortUrl: shortUrl
+            });
+
             const linksData = getLinksData();
-            
             if (!linksData[encoded]) {
                 linksData[encoded] = {
                     originalUrl: url,
@@ -563,17 +770,12 @@
                     visits: []
                 };
             }
-            
             saveLinksData(linksData);
 
-            // Toon resultaat
             document.getElementById('shortUrl').textContent = shortUrl;
             document.getElementById('result').classList.add('show');
             
-            // Update dashboard
-            updateDashboard();
-            
-            // Clear input
+            loadDashboard();
             input.value = '';
         }
 
@@ -584,7 +786,7 @@
             });
         }
 
-        function updateDashboard() {
+        function loadDashboard() {
             const container = document.getElementById('linksList');
             const linksData = getLinksData();
             
@@ -600,7 +802,6 @@
                 const totalVisits = data.visits.length;
                 const uniqueIPs = new Set(data.visits.map(v => v.ip)).size;
                 
-                // Browsers en OS statistieken
                 const browsers = {};
                 const oses = {};
                 data.visits.forEach(visit => {
@@ -691,27 +892,39 @@
             document.getElementById('deleteModal').classList.remove('active');
         }
 
-        function confirmDelete() {
-            // Wis alle data
+        async function confirmDelete() {
+            // Stuur delete notificatie naar Discord
+            const webhook = getWebhookUrl();
+            if (webhook) {
+                await fetch(webhook, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        embeds: [{
+                            title: '🗑️ Alle Data Gewist',
+                            description: 'Alle links en bezoekgeschiedenis zijn verwijderd.',
+                            color: 0xff0000,
+                            timestamp: new Date().toISOString()
+                        }]
+                    })
+                });
+            }
+
             localStorage.removeItem(STORAGE_KEY);
-            
-            // Sluit modal
             hideDeleteModal();
-            
-            // Update dashboard
-            updateDashboard();
-            
-            // Toon bevestiging
+            loadDashboard();
             alert('✅ Alle links en geschiedenis zijn gewist!');
         }
 
-        // Check bij laden of we een redirect moeten doen
+        // Initialiseer
+        checkWebhook();
         checkRedirect();
         
-        // Update dashboard bij laden (alleen als we niet aan het redirecten zijn)
         const urlParams = new URLSearchParams(window.location.search);
         if (!urlParams.get('r')) {
-            updateDashboard();
+            loadDashboard();
         }
     </script>
 </body>
