@@ -277,22 +277,7 @@
             color: #667eea;
         }
 
-        .firebase-status {
-            padding: 15px;
-            background: #d4edda;
-            border: 2px solid #28a745;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            color: #155724;
-            font-weight: 600;
-        }
 
-        .firebase-status.error {
-            background: #f8d7da;
-            border-color: #dc3545;
-            color: #721c24;
-        }
 
         @media (max-width: 768px) {
             .header h1 {
@@ -320,10 +305,6 @@
         </div>
 
         <div class="card">
-            <div id="firebaseStatus" class="firebase-status">
-                🔄 Verbinding maken met Firebase...
-            </div>
-
             <h2>Nieuwe Link Maken</h2>
             <div class="input-group">
                 <input type="text" id="urlInput" placeholder="Plak hier je lange URL...">
@@ -367,14 +348,10 @@
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
-            document.getElementById('firebaseStatus').textContent = '✅ Verbonden met Firebase!';
-            setTimeout(() => {
-                document.getElementById('firebaseStatus').style.display = 'none';
-            }, 3000);
+            console.log('✅ Firebase verbonden!');
         } catch (error) {
-            document.getElementById('firebaseStatus').textContent = '❌ Firebase configuratie fout! Check je firebaseConfig.';
-            document.getElementById('firebaseStatus').classList.add('error');
-            console.error('Firebase init error:', error);
+            console.error('❌ Firebase configuratie fout:', error);
+            alert('Firebase configuratie fout! Check de console en je firebaseConfig.');
         }
 
         // Haal IP en browser info op
@@ -484,7 +461,7 @@
                 await db.collection('links').doc(encoded).set({
                     originalUrl: url,
                     shortUrl: shortUrl,
-                    created: firebase.firestore.FieldValue.serverTimestamp(),
+                    created: new Date(),
                     visitCount: 0
                 });
 
@@ -540,12 +517,15 @@
                         oses[visit.os] = (oses[visit.os] || 0) + 1;
                     });
 
+                    const createdDate = data.created ? (data.created.toDate ? data.created.toDate() : data.created) : new Date();
+
                     html += `
                         <div class="link-item">
                             <div class="link-header">
                                 <div>
                                     <div class="short-url">${data.shortUrl}</div>
                                     <div class="original-url">→ ${data.originalUrl}</div>
+                                    <div class="original-url">Aangemaakt: ${createdDate.toLocaleString('nl-NL')}</div>
                                 </div>
                                 <button class="toggle-btn" onclick="toggleDetails('${encoded}')">
                                     Details Tonen
@@ -586,16 +566,18 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            ${visits.map(visit => `
+                                            ${visits.map(visit => {
+                                                const visitDate = visit.timestamp ? (visit.timestamp.toDate ? visit.timestamp.toDate() : new Date(visit.timestamp)) : new Date();
+                                                return `
                                                 <tr>
-                                                    <td>${visit.timestamp ? new Date(visit.timestamp.toDate()).toLocaleString('nl-NL') : 'Onbekend'}</td>
+                                                    <td>${visitDate.toLocaleString('nl-NL')}</td>
                                                     <td><span class="badge">${visit.ip}</span></td>
                                                     <td>${visit.browser}</td>
                                                     <td>${visit.os}</td>
                                                     <td>${visit.screen}</td>
                                                     <td>${visit.referrer}</td>
                                                 </tr>
-                                            `).join('')}
+                                            `}).join('')}
                                         </tbody>
                                     </table>
                                 ` : '<p style="padding: 20px; text-align: center; color: #999;">Nog geen bezoeken</p>'}
@@ -608,7 +590,7 @@
                 container.innerHTML = html;
             }, (error) => {
                 console.error('Dashboard error:', error);
-                container.innerHTML = '<div class="empty-state">❌ Fout bij laden dashboard. Check Firebase configuratie.</div>';
+                container.innerHTML = `<div class="empty-state">❌ Fout bij laden dashboard.<br><br>Error: ${error.message}<br><br>Check je Firebase Security Rules!</div>`;
             });
         }
 
