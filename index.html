@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL Shortener met Tracking</title>
+    <title>URL Shortener met Firebase Tracking</title>
     <style>
         * {
             margin: 0;
@@ -51,51 +51,6 @@
             padding: 30px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
             margin-bottom: 30px;
-        }
-
-        .webhook-setup {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .webhook-setup h3 {
-            color: #856404;
-            margin-bottom: 10px;
-        }
-
-        .webhook-setup input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ffc107;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-
-        .webhook-setup button {
-            margin-top: 10px;
-            padding: 10px 20px;
-            font-size: 14px;
-        }
-
-        .webhook-status {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .webhook-status.success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .webhook-status.error {
-            background: #f8d7da;
-            color: #721c24;
         }
 
         .input-group {
@@ -283,114 +238,6 @@
             color: #999;
         }
 
-        .danger-zone {
-            margin-top: 30px;
-            padding: 20px;
-            background: #fff5f5;
-            border: 2px solid #feb2b2;
-            border-radius: 8px;
-        }
-
-        .danger-zone h3 {
-            color: #c53030;
-            margin-bottom: 10px;
-        }
-
-        .danger-zone p {
-            color: #742a2a;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-
-        .delete-btn {
-            background: #c53030;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .delete-btn:hover {
-            background: #9b2c2c;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        .modal-content h2 {
-            color: #c53030;
-            margin-bottom: 15px;
-        }
-
-        .modal-content p {
-            color: #666;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        .btn-cancel {
-            padding: 12px 24px;
-            background: #e2e8f0;
-            color: #4a5568;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .btn-cancel:hover {
-            background: #cbd5e0;
-        }
-
-        .btn-confirm {
-            padding: 12px 24px;
-            background: #c53030;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .btn-confirm:hover {
-            background: #9b2c2c;
-        }
-
         .redirect-screen {
             display: none;
             position: fixed;
@@ -430,6 +277,23 @@
             color: #667eea;
         }
 
+        .firebase-status {
+            padding: 15px;
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #155724;
+            font-weight: 600;
+        }
+
+        .firebase-status.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 1.8em;
@@ -451,17 +315,13 @@
     <div class="container" id="mainContent">
         <div class="header">
             <h1>🔗 URL Shortener</h1>
-            <p>Maak verkorte links en track bezoekers<br>WERKT ALLEEN LOKAAL ER WORDT AAN GEWERKT</p>
-            <p class="info-text">💡 Data wordt real-time gesynchroniseerd via Discord</p>
+            <p>Maak verkorte links en track bezoekers</p>
+            <p class="info-text">🔥 Powered by Firebase - Real-time synchronisatie</p>
         </div>
 
         <div class="card">
-            <div class="webhook-setup" id="webhookSetup">
-                <h3>⚙️ Discord Webhook Setup</h3>
-                <p>Plak je Discord webhook URL hieronder om tracking te activeren:</p>
-                <input type="text" id="webhookInput" placeholder="https://discord.com/api/webhooks/...">
-                <button onclick="saveWebhook()">Opslaan</button>
-                <div id="webhookStatus"></div>
+            <div id="firebaseStatus" class="firebase-status">
+                🔄 Verbinding maken met Firebase...
             </div>
 
             <h2>Nieuwe Link Maken</h2>
@@ -479,167 +339,42 @@
 
         <div class="card">
             <h2>Mijn Links Dashboard</h2>
-            <button onclick="loadDashboard()" style="margin-bottom: 20px;">🔄 Dashboard Verversen</button>
+            <p style="margin-bottom: 20px; color: #666;">Real-time updates - data wordt automatisch gesynchroniseerd!</p>
             <div id="linksList"></div>
-            
-            <div class="danger-zone">
-                <h3>⚠️ Danger Zone</h3>
-                <p>Wis alle links en bezoekgeschiedenis. Deze actie kan niet ongedaan gemaakt worden!</p>
-                <button class="delete-btn" onclick="showDeleteModal()">🗑️ Alles Wissen</button>
-            </div>
         </div>
     </div>
 
-    <div class="modal" id="deleteModal">
-        <div class="modal-content">
-            <h2>⚠️ Weet je het zeker?</h2>
-            <p>Je staat op het punt om <strong>ALLE links en bezoekgegevens permanent te verwijderen</strong>. Dit verwijdert ook alle berichten in je Discord channel!</p>
-            <p>Wil je echt doorgaan?</p>
-            <div class="modal-buttons">
-                <button class="btn-cancel" onclick="hideDeleteModal()">Annuleren</button>
-                <button class="btn-confirm" onclick="confirmDelete()">Ja, Alles Wissen</button>
-            </div>
-        </div>
-    </div>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <script>
-        const STORAGE_KEY = 'urlShortenerData';
-        const WEBHOOK_KEY = 'discordWebhookUrl';
+        // ====================================
+        // VERVANG DIT MET JOUW FIREBASE CONFIG
+        // ====================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmncAYmW_jAthaasN47nMLPnIQMcEwXXU",
+            authDomain: "url-tracker-918c7.firebaseapp.com",
+            projectId: "url-tracker-918c7",
+            storageBucket: "url-tracker-918c7.firebasestorage.app",
+            messagingSenderId: "1034087363063",
+            appId: "1:1034087363063:web:1b5cd61c4885bb1350fef2"
+        };
+        // ====================================
 
-        // Haal webhook URL op
-        function getWebhookUrl() {
-            return localStorage.getItem(WEBHOOK_KEY);
-        }
-
-        // Sla webhook URL op
-        function saveWebhook() {
-            const input = document.getElementById('webhookInput');
-            const url = input.value.trim();
-            
-            if (!url) {
-                showWebhookStatus('Voer een webhook URL in!', 'error');
-                return;
-            }
-
-            if (!url.includes('discord.com/api/webhooks/')) {
-                showWebhookStatus('Ongeldige Discord webhook URL!', 'error');
-                return;
-            }
-
-            localStorage.setItem(WEBHOOK_KEY, url);
-            showWebhookStatus('✅ Webhook opgeslagen! Tracking is nu actief.', 'success');
-            
-            // Verberg setup na opslaan
+        // Initialize Firebase
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            document.getElementById('firebaseStatus').textContent = '✅ Verbonden met Firebase!';
             setTimeout(() => {
-                document.getElementById('webhookSetup').style.display = 'none';
-            }, 2000);
-        }
-
-        function showWebhookStatus(message, type) {
-            const status = document.getElementById('webhookStatus');
-            status.textContent = message;
-            status.className = `webhook-status ${type}`;
-            status.style.display = 'block';
-        }
-
-        // Check of webhook is ingesteld
-        function checkWebhook() {
-            const webhook = getWebhookUrl();
-            if (webhook) {
-                document.getElementById('webhookSetup').style.display = 'none';
-            } else {
-                document.getElementById('createBtn').disabled = true;
-            }
-        }
-
-        // Stuur data naar Discord
-        async function sendToDiscord(type, data) {
-            const webhook = getWebhookUrl();
-            if (!webhook) return false;
-
-            let embed;
-
-            if (type === 'new_link') {
-                embed = {
-                    title: '🔗 Nieuwe Link Aangemaakt',
-                    color: 0x667eea,
-                    fields: [
-                        {
-                            name: 'Short ID',
-                            value: `\`${data.shortId}\``,
-                            inline: false
-                        },
-                        {
-                            name: 'Originele URL',
-                            value: data.originalUrl,
-                            inline: false
-                        },
-                        {
-                            name: 'Korte Link',
-                            value: data.shortUrl,
-                            inline: false
-                        }
-                    ],
-                    timestamp: new Date().toISOString()
-                };
-            } else if (type === 'visit') {
-                embed = {
-                    title: '👀 Nieuwe Bezoeker',
-                    color: 0x43b581,
-                    fields: [
-                        {
-                            name: 'Link ID',
-                            value: `\`${data.shortId}\``,
-                            inline: true
-                        },
-                        {
-                            name: 'IP Adres',
-                            value: data.ip,
-                            inline: true
-                        },
-                        {
-                            name: 'Browser',
-                            value: data.browser,
-                            inline: true
-                        },
-                        {
-                            name: 'OS',
-                            value: data.os,
-                            inline: true
-                        },
-                        {
-                            name: 'Scherm',
-                            value: data.screen,
-                            inline: true
-                        },
-                        {
-                            name: 'Referrer',
-                            value: data.referrer,
-                            inline: true
-                        }
-                    ],
-                    timestamp: new Date().toISOString(),
-                    footer: {
-                        text: `Originele URL: ${data.originalUrl}`
-                    }
-                };
-            }
-
-            try {
-                await fetch(webhook, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        embeds: [embed]
-                    })
-                });
-                return true;
-            } catch (e) {
-                console.error('Discord webhook error:', e);
-                return false;
-            }
+                document.getElementById('firebaseStatus').style.display = 'none';
+            }, 3000);
+        } catch (error) {
+            document.getElementById('firebaseStatus').textContent = '❌ Firebase configuratie fout! Check je firebaseConfig.';
+            document.getElementById('firebaseStatus').classList.add('error');
+            console.error('Firebase init error:', error);
         }
 
         // Haal IP en browser info op
@@ -694,46 +429,35 @@
                     const decoded = atob(r);
                     const visitorInfo = await getVisitorInfo();
                     
-                    // Stuur naar Discord
-                    await sendToDiscord('visit', {
-                        shortId: r.substring(0, 8),
+                    // Sla visit op in Firebase
+                    await db.collection('visits').add({
+                        linkId: r,
                         originalUrl: decoded,
                         ip: visitorInfo.ip,
                         browser: parseBrowser(visitorInfo.userAgent),
                         os: parseOS(visitorInfo.userAgent),
                         screen: visitorInfo.screenResolution,
-                        referrer: visitorInfo.referrer
+                        referrer: visitorInfo.referrer,
+                        userAgent: visitorInfo.userAgent,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
-                    // Lokaal ook opslaan
-                    const linksData = getLinksData();
-                    if (!linksData[r]) {
-                        linksData[r] = {
-                            originalUrl: decoded,
-                            created: new Date().toISOString(),
-                            visits: []
-                        };
-                    }
-                    linksData[r].visits.push(visitorInfo);
-                    saveLinksData(linksData);
+                    // Update visit counter
+                    const linkRef = db.collection('links').doc(r);
+                    await linkRef.update({
+                        visitCount: firebase.firestore.FieldValue.increment(1),
+                        lastVisit: firebase.firestore.FieldValue.serverTimestamp()
+                    });
                     
                     setTimeout(() => {
                         window.location.href = decoded;
                     }, 1500);
                 } catch (e) {
+                    console.error('Redirect error:', e);
                     alert('Ongeldige link');
                     window.location.href = window.location.origin;
                 }
             }
-        }
-
-        function getLinksData() {
-            const data = localStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : {};
-        }
-
-        function saveLinksData(data) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
 
         async function createShortUrl() {
@@ -755,28 +479,23 @@
             const encoded = btoa(url);
             const shortUrl = `${window.location.origin}${window.location.pathname}?r=${encoded}`;
             
-            // Stuur naar Discord
-            await sendToDiscord('new_link', {
-                shortId: encoded.substring(0, 8),
-                originalUrl: url,
-                shortUrl: shortUrl
-            });
-
-            const linksData = getLinksData();
-            if (!linksData[encoded]) {
-                linksData[encoded] = {
+            // Sla link op in Firebase
+            try {
+                await db.collection('links').doc(encoded).set({
                     originalUrl: url,
-                    created: new Date().toISOString(),
-                    visits: []
-                };
-            }
-            saveLinksData(linksData);
+                    shortUrl: shortUrl,
+                    created: firebase.firestore.FieldValue.serverTimestamp(),
+                    visitCount: 0
+                });
 
-            document.getElementById('shortUrl').textContent = shortUrl;
-            document.getElementById('result').classList.add('show');
-            
-            loadDashboard();
-            input.value = '';
+                document.getElementById('shortUrl').textContent = shortUrl;
+                document.getElementById('result').classList.add('show');
+                
+                input.value = '';
+            } catch (error) {
+                console.error('Error creating link:', error);
+                alert('Fout bij aanmaken link. Check console voor details.');
+            }
         }
 
         function copyToClipboard() {
@@ -786,97 +505,111 @@
             });
         }
 
+        // Real-time dashboard laden
         function loadDashboard() {
             const container = document.getElementById('linksList');
-            const linksData = getLinksData();
-            
-            if (Object.keys(linksData).length === 0) {
-                container.innerHTML = '<div class="empty-state">Nog geen links gemaakt. Maak je eerste verkorte link hierboven!</div>';
-                return;
-            }
+            container.innerHTML = '<div class="loading">Dashboard laden...</div>';
 
-            let html = '<div class="links-list">';
-            
-            for (const [encoded, data] of Object.entries(linksData)) {
-                const shortUrl = `${window.location.origin}${window.location.pathname}?r=${encoded}`;
-                const totalVisits = data.visits.length;
-                const uniqueIPs = new Set(data.visits.map(v => v.ip)).size;
+            // Real-time listener voor links
+            db.collection('links').orderBy('created', 'desc').onSnapshot(async (snapshot) => {
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="empty-state">Nog geen links gemaakt. Maak je eerste verkorte link hierboven!</div>';
+                    return;
+                }
+
+                let html = '<div class="links-list">';
                 
-                const browsers = {};
-                const oses = {};
-                data.visits.forEach(visit => {
-                    const browser = parseBrowser(visit.userAgent);
-                    const os = parseOS(visit.userAgent);
-                    browsers[browser] = (browsers[browser] || 0) + 1;
-                    oses[os] = (oses[os] || 0) + 1;
-                });
+                for (const doc of snapshot.docs) {
+                    const data = doc.data();
+                    const encoded = doc.id;
+                    
+                    // Haal visits op voor deze link
+                    const visitsSnapshot = await db.collection('visits')
+                        .where('linkId', '==', encoded)
+                        .orderBy('timestamp', 'desc')
+                        .get();
+                    
+                    const visits = visitsSnapshot.docs.map(d => d.data());
+                    const totalVisits = visits.length;
+                    const uniqueIPs = new Set(visits.map(v => v.ip)).size;
+                    
+                    const browsers = {};
+                    const oses = {};
+                    visits.forEach(visit => {
+                        browsers[visit.browser] = (browsers[visit.browser] || 0) + 1;
+                        oses[visit.os] = (oses[visit.os] || 0) + 1;
+                    });
 
-                html += `
-                    <div class="link-item">
-                        <div class="link-header">
-                            <div>
-                                <div class="short-url">${shortUrl}</div>
-                                <div class="original-url">→ ${data.originalUrl}</div>
+                    html += `
+                        <div class="link-item">
+                            <div class="link-header">
+                                <div>
+                                    <div class="short-url">${data.shortUrl}</div>
+                                    <div class="original-url">→ ${data.originalUrl}</div>
+                                </div>
+                                <button class="toggle-btn" onclick="toggleDetails('${encoded}')">
+                                    Details Tonen
+                                </button>
                             </div>
-                            <button class="toggle-btn" onclick="toggleDetails('${encoded}')">
-                                Details Tonen
-                            </button>
-                        </div>
-                        
-                        <div class="stats">
-                            <div class="stat-box">
-                                <div class="stat-value">${totalVisits}</div>
-                                <div class="stat-label">Totale Bezoeken</div>
+                            
+                            <div class="stats">
+                                <div class="stat-box">
+                                    <div class="stat-value">${totalVisits}</div>
+                                    <div class="stat-label">Totale Bezoeken</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-value">${uniqueIPs}</div>
+                                    <div class="stat-label">Unieke Bezoekers</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-value">${Object.keys(browsers).length}</div>
+                                    <div class="stat-label">Verschillende Browsers</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-value">${Object.keys(oses).length}</div>
+                                    <div class="stat-label">Verschillende OS</div>
+                                </div>
                             </div>
-                            <div class="stat-box">
-                                <div class="stat-value">${uniqueIPs}</div>
-                                <div class="stat-label">Unieke Bezoekers</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-value">${Object.keys(browsers).length}</div>
-                                <div class="stat-label">Verschillende Browsers</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-value">${Object.keys(oses).length}</div>
-                                <div class="stat-label">Verschillende OS</div>
-                            </div>
-                        </div>
-                        
-                        <div id="details-${encoded}" class="visits-table hidden">
-                            <h3 style="margin: 20px 0 10px 0;">Bezoek Details</h3>
-                            ${data.visits.length > 0 ? `
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Tijd</th>
-                                            <th>IP Adres</th>
-                                            <th>Browser</th>
-                                            <th>OS</th>
-                                            <th>Scherm</th>
-                                            <th>Referrer</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${data.visits.map(visit => `
+                            
+                            <div id="details-${encoded}" class="visits-table hidden">
+                                <h3 style="margin: 20px 0 10px 0;">Bezoek Details</h3>
+                                ${visits.length > 0 ? `
+                                    <table>
+                                        <thead>
                                             <tr>
-                                                <td>${new Date(visit.timestamp).toLocaleString('nl-NL')}</td>
-                                                <td><span class="badge">${visit.ip}</span></td>
-                                                <td>${parseBrowser(visit.userAgent)}</td>
-                                                <td>${parseOS(visit.userAgent)}</td>
-                                                <td>${visit.screenResolution}</td>
-                                                <td>${visit.referrer}</td>
+                                                <th>Tijd</th>
+                                                <th>IP Adres</th>
+                                                <th>Browser</th>
+                                                <th>OS</th>
+                                                <th>Scherm</th>
+                                                <th>Referrer</th>
                                             </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            ` : '<p style="padding: 20px; text-align: center; color: #999;">Nog geen bezoeken</p>'}
+                                        </thead>
+                                        <tbody>
+                                            ${visits.map(visit => `
+                                                <tr>
+                                                    <td>${visit.timestamp ? new Date(visit.timestamp.toDate()).toLocaleString('nl-NL') : 'Onbekend'}</td>
+                                                    <td><span class="badge">${visit.ip}</span></td>
+                                                    <td>${visit.browser}</td>
+                                                    <td>${visit.os}</td>
+                                                    <td>${visit.screen}</td>
+                                                    <td>${visit.referrer}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                ` : '<p style="padding: 20px; text-align: center; color: #999;">Nog geen bezoeken</p>'}
+                            </div>
                         </div>
-                    </div>
-                `;
-            }
-            
-            html += '</div>';
-            container.innerHTML = html;
+                    `;
+                }
+                
+                html += '</div>';
+                container.innerHTML = html;
+            }, (error) => {
+                console.error('Dashboard error:', error);
+                container.innerHTML = '<div class="empty-state">❌ Fout bij laden dashboard. Check Firebase configuratie.</div>';
+            });
         }
 
         function toggleDetails(encoded) {
@@ -884,42 +617,7 @@
             details.classList.toggle('hidden');
         }
 
-        function showDeleteModal() {
-            document.getElementById('deleteModal').classList.add('active');
-        }
-
-        function hideDeleteModal() {
-            document.getElementById('deleteModal').classList.remove('active');
-        }
-
-        async function confirmDelete() {
-            // Stuur delete notificatie naar Discord
-            const webhook = getWebhookUrl();
-            if (webhook) {
-                await fetch(webhook, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        embeds: [{
-                            title: '🗑️ Alle Data Gewist',
-                            description: 'Alle links en bezoekgeschiedenis zijn verwijderd.',
-                            color: 0xff0000,
-                            timestamp: new Date().toISOString()
-                        }]
-                    })
-                });
-            }
-
-            localStorage.removeItem(STORAGE_KEY);
-            hideDeleteModal();
-            loadDashboard();
-            alert('✅ Alle links en geschiedenis zijn gewist!');
-        }
-
         // Initialiseer
-        checkWebhook();
         checkRedirect();
         
         const urlParams = new URLSearchParams(window.location.search);
