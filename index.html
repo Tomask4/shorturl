@@ -334,12 +334,12 @@
         // VERVANG DIT MET JOUW FIREBASE CONFIG
         // ====================================
         const firebaseConfig = {
-            apiKey: "AIzaSyAmncAYmW_jAthaasN47nMLPnIQMcEwXXU",
-            authDomain: "url-tracker-918c7.firebaseapp.com",
-            projectId: "url-tracker-918c7",
-            storageBucket: "url-tracker-918c7.firebasestorage.app",
-            messagingSenderId: "1034087363063",
-            appId: "1:1034087363063:web:1b5cd61c4885bb1350fef2"
+            apiKey: "JOUW_API_KEY",
+            authDomain: "JOUW_PROJECT.firebaseapp.com",
+            projectId: "JOUW_PROJECT_ID",
+            storageBucket: "JOUW_PROJECT.appspot.com",
+            messagingSenderId: "JOUW_SENDER_ID",
+            appId: "JOUW_APP_ID"
         };
         // ====================================
 
@@ -580,8 +580,8 @@
                                     <button class="toggle-btn" onclick="toggleDetails('${encoded}')">
                                         Details Tonen
                                     </button>
-                                    <button class="delete-link-btn" onclick="showLinkDeleteModal('${encoded}', '${data.shortUrl}')">
-                                        🗑️ Verwijderen
+                                    <button class="delete-link-btn" onclick="showLinkDeleteModal('${encoded}', '${data.shortUrl.replace(/'/g, "\\'")}')">
+                                        ✕
                                     </button>
                                 </div>
                             </div>
