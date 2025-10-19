@@ -576,9 +576,14 @@
                                     <div class="original-url">→ ${data.originalUrl}</div>
                                     <div class="original-url">Aangemaakt: ${createdDate.toLocaleString('nl-NL')}</div>
                                 </div>
-                                <button class="toggle-btn" onclick="toggleDetails('${encoded}')">
-                                    Details Tonen
-                                </button>
+                                <div>
+                                    <button class="toggle-btn" onclick="toggleDetails('${encoded}')">
+                                        Details Tonen
+                                    </button>
+                                    <button class="delete-link-btn" onclick="showLinkDeleteModal('${encoded}', '${data.shortUrl}')">
+                                        🗑️ Verwijderen
+                                    </button>
+                                </div>
                             </div>
                             
                             <div class="stats">
@@ -654,6 +659,28 @@
         function toggleDetails(encoded) {
             const details = document.getElementById(`details-${encoded}`);
             details.classList.toggle('hidden');
+        }
+
+        // Link delete modal
+        let linkToDelete = null;
+
+        function showLinkDeleteModal(linkId, shortUrl) {
+            linkToDelete = linkId;
+            document.getElementById('deleteLinkUrl').textContent = shortUrl;
+            document.getElementById('deleteLinkModal').classList.add('active');
+        }
+
+        function hideLinkDeleteModal() {
+            linkToDelete = null;
+            document.getElementById('deleteLinkModal').classList.remove('active');
+        }
+
+        function confirmLinkDelete() {
+            if (linkToDelete) {
+                removeMyLink(linkToDelete);
+                hideLinkDeleteModal();
+                loadDashboard();
+            }
         }
 
         // Initialiseer
