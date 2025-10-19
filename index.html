@@ -666,13 +666,16 @@
 
         function showLinkDeleteModal(linkId, shortUrl) {
             linkToDelete = linkId;
-            document.getElementById('deleteLinkUrl').textContent = shortUrl;
-            document.getElementById('deleteLinkModal').classList.add('active');
+            const urlElement = document.getElementById('linkDeleteUrl');
+            if (urlElement) {
+                urlElement.textContent = shortUrl;
+            }
+            document.getElementById('linkDeleteModal').classList.add('active');
         }
 
         function hideLinkDeleteModal() {
             linkToDelete = null;
-            document.getElementById('deleteLinkModal').classList.remove('active');
+            document.getElementById('linkDeleteModal').classList.remove('active');
         }
 
         function confirmLinkDelete() {
