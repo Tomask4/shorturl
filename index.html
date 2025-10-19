@@ -666,16 +666,27 @@
 
         function showLinkDeleteModal(linkId, shortUrl) {
             linkToDelete = linkId;
+            const modal = document.getElementById('linkDeleteModal');
             const urlElement = document.getElementById('linkDeleteUrl');
-            if (urlElement) {
+            
+            if (modal && urlElement) {
                 urlElement.textContent = shortUrl;
+                modal.classList.add('active');
+            } else {
+                // Fallback: direct verwijderen zonder modal
+                if (confirm(`Link verwijderen uit je lijst?\n\n${shortUrl}\n\nDe link blijft werken, maar verdwijnt uit jouw dashboard.`)) {
+                    removeMyLink(linkId);
+                    loadDashboard();
+                }
             }
-            document.getElementById('linkDeleteModal').classList.add('active');
         }
 
         function hideLinkDeleteModal() {
             linkToDelete = null;
-            document.getElementById('linkDeleteModal').classList.remove('active');
+            const modal = document.getElementById('linkDeleteModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
         }
 
         function confirmLinkDelete() {
