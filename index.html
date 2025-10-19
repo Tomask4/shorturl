@@ -354,6 +354,31 @@
             alert('Firebase configuratie fout! Check de console en je firebaseConfig.');
         }
 
+        // LocalStorage key voor mijn links
+        const MY_LINKS_KEY = 'myCreatedLinks';
+
+        // Haal mijn gemaakte links op
+        function getMyLinks() {
+            const links = localStorage.getItem(MY_LINKS_KEY);
+            return links ? JSON.parse(links) : [];
+        }
+
+        // Voeg link toe aan mijn lijst
+        function addMyLink(linkId) {
+            const myLinks = getMyLinks();
+            if (!myLinks.includes(linkId)) {
+                myLinks.push(linkId);
+                localStorage.setItem(MY_LINKS_KEY, JSON.stringify(myLinks));
+            }
+        }
+
+        // Verwijder link uit mijn lijst
+        function removeMyLink(linkId) {
+            let myLinks = getMyLinks();
+            myLinks = myLinks.filter(id => id !== linkId);
+            localStorage.setItem(MY_LINKS_KEY, JSON.stringify(myLinks));
+        }
+
         // Haal IP en browser info op
         async function getVisitorInfo() {
             const info = {
@@ -465,6 +490,9 @@
                     visitCount: 0
                 });
 
+                // Voeg toe aan MIJN links
+                addMyLink(encoded);
+
                 document.getElementById('shortUrl').textContent = shortUrl;
                 document.getElementById('result').classList.add('show');
                 
@@ -485,18 +513,29 @@
         // Real-time dashboard laden
         function loadDashboard() {
             const container = document.getElementById('linksList');
+            const myLinks = getMyLinks();
+
+            if (myLinks.length === 0) {
+                container.innerHTML = '<div class="empty-state">Nog geen links gemaakt. Maak je eerste verkorte link hierboven!</div>';
+                return;
+            }
+
             container.innerHTML = '<div class="loading">Dashboard laden...</div>';
 
-            // Real-time listener voor links
-            db.collection('links').orderBy('created', 'desc').onSnapshot(async (snapshot) => {
-                if (snapshot.empty) {
-                    container.innerHTML = '<div class="empty-state">Nog geen links gemaakt. Maak je eerste verkorte link hierboven!</div>';
-                    return;
-                }
+            // Luister alleen naar MIJN links
+            let loadedCount = 0;
+            let htmlParts = [];
 
-                let html = '<div class="links-list">';
-                
-                for (const doc of snapshot.docs) {
+            myLinks.forEach((linkId, index) => {
+                db.collection('links').doc(linkId).onSnapshot(async (doc) => {
+                    if (!doc.exists) {
+                        // Link bestaat niet meer in database
+                        removeMyLink(linkId);
+                        loadedCount++;
+                        checkIfAllLoaded();
+                        return;
+                    }
+
                     const data = doc.data();
                     const encoded = doc.id;
                     
@@ -519,7 +558,7 @@
 
                     const createdDate = data.created ? (data.created.toDate ? data.created.toDate() : data.created) : new Date();
 
-                    html += `
+                    htmlParts[index] = `
                         <div class="link-item">
                             <div class="link-header">
                                 <div>
@@ -584,14 +623,22 @@
                             </div>
                         </div>
                     `;
-                }
-                
-                html += '</div>';
-                container.innerHTML = html;
-            }, (error) => {
-                console.error('Dashboard error:', error);
-                container.innerHTML = `<div class="empty-state">❌ Fout bij laden dashboard.<br><br>Error: ${error.message}<br><br>Check je Firebase Security Rules!</div>`;
+
+                    loadedCount++;
+                    checkIfAllLoaded();
+                }, (error) => {
+                    console.error('Error loading link:', error);
+                    loadedCount++;
+                    checkIfAllLoaded();
+                });
             });
+
+            function checkIfAllLoaded() {
+                if (loadedCount === myLinks.length) {
+                    const html = '<div class="links-list">' + htmlParts.filter(h => h).join('') + '</div>';
+                    container.innerHTML = html;
+                }
+            }
         }
 
         function toggleDetails(encoded) {
