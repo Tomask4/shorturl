@@ -483,20 +483,30 @@
             
             // Sla link op in Firebase
             try {
-                await db.collection('links').doc(encoded).set({
-                    originalUrl: url,
-                    shortUrl: shortUrl,
-                    created: new Date(),
-                    visitCount: 0
-                });
+                // Check eerst of de link al bestaat
+                const linkDoc = await db.collection('links').doc(encoded).get();
+                
+                if (!linkDoc.exists) {
+                    // Link bestaat nog niet, maak hem aan
+                    await db.collection('links').doc(encoded).set({
+                        originalUrl: url,
+                        shortUrl: shortUrl,
+                        created: new Date(),
+                        visitCount: 0
+                    });
+                }
+                // Als link al bestaat, gewoon doorgaan (geen error)
 
-                // Voeg toe aan MIJN links
+                // Voeg toe aan MIJN links (ook als hij al bestond)
                 addMyLink(encoded);
 
                 document.getElementById('shortUrl').textContent = shortUrl;
                 document.getElementById('result').classList.add('show');
                 
                 input.value = '';
+                
+                // Herlaad dashboard om nieuwe link te tonen
+                loadDashboard();
             } catch (error) {
                 console.error('Error creating link:', error);
                 alert('Fout bij aanmaken link. Check console voor details.');
